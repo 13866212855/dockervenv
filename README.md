@@ -26,7 +26,7 @@
 
 1. **克隆项目**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/13866212855/dockervenv.git
    cd dockervenv
    ```
 
