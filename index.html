@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码沙盒</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #1e1e1e;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .editor-panel {
+            width: 50%;
+            background: #252526;
+            border-right: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 15px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            color: #cccccc;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .run-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .run-button:hover {
+            background: #005a9e;
+        }
+        
+        .preview-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .preview-button:hover {
+            background: #218838;
+        }
+        .tabs {
+            display: flex;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: #2d2d30;
+            border: none;
+            color: #cccccc;
+            cursor: pointer;
+            border-right: 1px solid #3e3e42;
+            font-size: 14px;
+        }
+        
+        .tab:hover {
+            background: #3e3e42;
+        }
+        
+        .tab.active {
+            background: #007acc;
+            color: white;
+        }
+        
+        .editor-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .parse-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .parse-button:hover {
+            background: #218838;
+        }
+        
+        .parse-button.show {
+            display: block;
+        }
+        
+        .auto-detect-hint {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            z-index: 999;
+            display: none;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+        
+        .auto-detect-hint:hover {
+            background: #e0a800;
+        }
+        
+        .auto-detect-hint.show {
+            display: block;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .editor-wrapper {
+            display: none;
+            height: 100%;
+        }
+        
+        .editor-wrapper.active {
+            display: block;
+        }
+        
+        .editor-area {
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            color: #fff;
+            border: none;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+        
+        .preview-panel {
+            width: 50%;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preview-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            color: #333;
+        }
+        
+        .preview-header h2 {
+            font-size: 16px;
+            color: #495057;
+        }
+        
+        .preview-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="editor-panel">
+            <div class="header">
+                 <h1>代码沙盒</h1>
+                 <div class="header-buttons">
+                     <button class="run-button" onclick="runCode()">运行代码</button>
+                     <button class="preview-button" onclick="openPreviewWindow()">新窗口预览</button>
+                 </div>
+             </div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('html')">HTML</button>
+                <button class="tab" onclick="switchTab('css')">CSS</button>
+                <button class="tab" onclick="switchTab('js')">JavaScript</button>
+            </div>
+            <div class="editor-container">
+                  <button class="parse-button" id="parse-button" onclick="separateCode()">分离代码</button>
+                  <button class="auto-detect-hint" id="auto-detect-hint" onclick="autoSeparateCode()">检测到内联代码，点击自动分离</button>
+                  <div class="editor-wrapper active" id="html-editor">
+                      <textarea class="editor-area" id="html-code" placeholder="请在此输入您的HTML代码..."></textarea>
+                  </div>
+                <div class="editor-wrapper" id="css-editor">
+                    <textarea class="editor-area" id="css-code" placeholder="请在此输入您的CSS代码..."></textarea>
+                </div>
+                <div class="editor-wrapper" id="js-editor">
+                    <textarea class="editor-area" id="js-code" placeholder="请在此输入您的JavaScript代码..."></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="preview-panel">
+            <div class="preview-header">
+                <h2>预览</h2>
+            </div>
+            <iframe class="preview-iframe" id="preview-iframe"></iframe>
+        </div>
+    </div>
+
+    <script>
+        function setDefaultCode() {
+            var htmlCode = document.getElementById('html-code');
+            var cssCode = document.getElementById('css-code');
+            var jsCode = document.getElementById('js-code');
+            
+            htmlCode.value = '<div class="container">\n  <h1>你好世界！</h1>\n  <p>欢迎使用代码沙盒！</p>\n  <button onclick="changeColor()">改变颜色</button>\n</div>';
+            
+            cssCode.value = '.container {\n  text-align: center;\n  padding: 50px;\n  font-family: Arial, sans-serif;\n}\n\nh1 {\n  color: #333;\n  margin-bottom: 20px;\n}\n\nbutton {\n  background: #007acc;\n  color: white;\n  border: none;\n  padding: 10px 20px;\n  border-radius: 5px;\n  cursor: pointer;\n}';
+            
+            jsCode.value = 'function changeColor() {\n  var colors = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#feca57"];\n  var randomColor = colors[Math.floor(Math.random() * colors.length)];\n  document.querySelector("h1").style.color = randomColor;\n  console.log("颜色已改变为: " + randomColor);\n}';
+        }
+
+        function runCode() {
+            var htmlContent = document.getElementById('html-code').value;
+            var cssContent = document.getElementById('css-code').value;
+            var jsContent = document.getElementById('js-code').value;
+            
+            var fullHTML = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>Preview</title>\n';
+            
+            if (cssContent.trim()) {
+                fullHTML += '<style>\n' + cssContent + '\n</style>\n';
+            }
+            
+            fullHTML += '</head>\n<body>\n';
+            
+            if (htmlContent.trim()) {
+                fullHTML += htmlContent + '\n';
+            }
+            
+            if (jsContent.trim()) {
+                fullHTML += '<script>\n' + jsContent + '\n<\/script>\n';
+            }
+            
+            fullHTML += '</body>\n</html>';
+            
+            var iframe = document.getElementById('preview-iframe');
+            var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(fullHTML);
+            iframeDoc.close();
+        }
+
+        function openPreviewWindow() {
+            var htmlContent = document.getElementById('html-code').value;
+            var cssContent = document.getElementById('css-code').value;
+            var jsContent = document.getElementById('js-code').value;
+            
+            var fullHTML = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>Code Sandbox Preview</title>\n';
+            
+            if (cssContent.trim()) {
+                fullHTML += '<style>\n' + cssContent + '\n</style>\n';
+            }
+            
+            fullHTML += '</head>\n<body>\n';
+            
+            if (htmlContent.trim()) {
+                fullHTML += htmlContent + '\n';
+            }
+            
+            if (jsContent.trim()) {
+                fullHTML += '<script>\n' + jsContent + '\n<\/script>\n';
+            }
+            
+            fullHTML += '</body>\n</html>';
+            
+            // 创建新窗口
+            var previewWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            
+            if (previewWindow) {
+                previewWindow.document.open();
+                previewWindow.document.write(fullHTML);
+                previewWindow.document.close();
+                previewWindow.focus();
+            } else {
+                alert('无法打开新窗口，请检查浏览器的弹窗拦截设置。');
+            }
+        }
+        function switchTab(tabName) {
+             var tabs = document.querySelectorAll('.tab');
+             var wrappers = document.querySelectorAll('.editor-wrapper');
+             
+             for (var i = 0; i < tabs.length; i++) {
+                 tabs[i].classList.remove('active');
+             }
+             
+             for (var i = 0; i < wrappers.length; i++) {
+                 wrappers[i].classList.remove('active');
+             }
+             
+             var activeTab = document.querySelector('.tab[onclick="switchTab(\'' + tabName + '\')"]');
+             var activeWrapper = document.getElementById(tabName + '-editor');
+             
+             if (activeTab) {
+                 activeTab.classList.add('active');
+             }
+             
+             if (activeWrapper) {
+                 activeWrapper.classList.add('active');
+             }
+             
+             // 显示或隐藏分离按钮
+             var parseButton = document.getElementById('parse-button');
+             if (tabName === 'html') {
+                 parseButton.classList.add('show');
+             } else {
+                 parseButton.classList.remove('show');
+             }
+         }
+         
+         function separateCode() {
+             var htmlContent = document.getElementById('html-code').value;
+             
+             if (!htmlContent.trim()) {
+                 alert('HTML编辑器中没有内容可以分离！');
+                 return;
+             }
+             
+             // 提取CSS
+             var cssMatches = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+             var extractedCSS = '';
+             if (cssMatches) {
+                 for (var i = 0; i < cssMatches.length; i++) {
+                     var cssContent = cssMatches[i].replace(/<\/?style[^>]*>/gi, '');
+                     extractedCSS += cssContent + '\n';
+                 }
+             }
+             
+             // 提取JavaScript
+             var jsMatches = htmlContent.match(/<script[^>]*>([\s\S]*?)<\/script>/gi);
+             var extractedJS = '';
+             if (jsMatches) {
+                 for (var i = 0; i < jsMatches.length; i++) {
+                     var jsContent = jsMatches[i].replace(/<\/?script[^>]*>/gi, '');
+                     extractedJS += jsContent + '\n';
+                 }
+             }
+             
+             // 移除HTML中的style和script标签
+             var cleanHTML = htmlContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+             cleanHTML = cleanHTML.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+             
+             // 更新编辑器内容
+             document.getElementById('html-code').value = cleanHTML.trim();
+             
+             if (extractedCSS.trim()) {
+                 document.getElementById('css-code').value = extractedCSS.trim();
+             }
+             
+             if (extractedJS.trim()) {
+                 document.getElementById('js-code').value = extractedJS.trim();
+             }
+             
+             alert('代码分离完成！CSS和JavaScript已提取到对应的编辑器中。');
+             
+             // 隐藏自动检测提示
+             document.getElementById('auto-detect-hint').classList.remove('show');
+         }
+         
+         function autoSeparateCode() {
+             separateCode();
+         }
+         
+         function detectInlineCode() {
+             var htmlContent = document.getElementById('html-code').value;
+             var autoDetectHint = document.getElementById('auto-detect-hint');
+             
+             // 检测是否包含内联CSS或JavaScript
+             var hasInlineCSS = /<style[^>]*>[\s\S]*?<\/style>/i.test(htmlContent);
+             var hasInlineJS = /<script[^>]*>[\s\S]*?<\/script>/i.test(htmlContent);
+             
+             if ((hasInlineCSS || hasInlineJS) && htmlContent.trim()) {
+                 autoDetectHint.classList.add('show');
+             } else {
+                 autoDetectHint.classList.remove('show');
+             }
+         }
+         
+         // 监听HTML编辑器内容变化
+         function setupAutoDetection() {
+             var htmlEditor = document.getElementById('html-code');
+             
+             // 监听输入事件
+             htmlEditor.addEventListener('input', function() {
+                 detectInlineCode();
+             });
+             
+             // 监听粘贴事件
+             htmlEditor.addEventListener('paste', function() {
+                 setTimeout(function() {
+                     detectInlineCode();
+                 }, 100);
+             });
+         }
+ 
+         window.addEventListener('load', function() {
+             setDefaultCode();
+             runCode();
+             // 初始显示分离按钮（因为默认是HTML标签页）
+             document.getElementById('parse-button').classList.add('show');
+             // 设置自动检测
+             setupAutoDetection();
+             // 初始检测
+             detectInlineCode();
+         });
+    </script>
+</body>
+</html>

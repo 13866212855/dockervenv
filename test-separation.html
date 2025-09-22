@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码分离功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        
+        .button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>代码分离测试</h1>
+        <p>这是一个包含内联CSS和JavaScript的测试页面</p>
+        <button class="button" onclick="testFunction()">点击测试</button>
+        <button class="button" onclick="changeBackground()">改变背景</button>
+        <div class="result" id="result">点击按钮查看效果</div>
+    </div>
+
+    <script>
+        function testFunction() {
+            const result = document.getElementById('result');
+            const now = new Date();
+            result.innerHTML = `测试成功！当前时间：${now.toLocaleTimeString()}`;
+            result.style.background = '#e8f5e8';
+            result.style.color = '#2e7d32';
+        }
+        
+        function changeBackground() {
+            const colors = [
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+            ];
+            
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            document.body.style.background = randomColor;
+            
+            const result = document.getElementById('result');
+            result.innerHTML = '背景颜色已改变！';
+            result.style.background = '#fff3e0';
+            result.style.color = '#e65100';
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，代码分离测试页面已准备就绪');
+        });
+    </script>
+</body>
+</html>

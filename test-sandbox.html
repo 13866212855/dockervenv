@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Sandbox Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1e1e1e;
+            color: #cccccc;
+            height: 100vh;
+            display: flex;
+        }
+        
+        .editor-panel {
+            width: 50%;
+            background: #252526;
+            border-right: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 15px 20px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .run-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: #2d2d30;
+            border: none;
+            color: #cccccc;
+            cursor: pointer;
+            border-right: 1px solid #3e3e42;
+        }
+        
+        .tab.active {
+            background: #007acc;
+            color: white;
+        }
+        
+        .editor-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        .editor-wrapper {
+            display: none;
+            height: 100%;
+        }
+        
+        .editor-wrapper.active {
+            display: block;
+        }
+        
+        .parse-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        
+        .CodeMirror {
+            height: 100% !important;
+            font-size: 14px;
+        }
+        
+        .preview-panel {
+            width: 50%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preview-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .preview-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        .preview-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        
+        .error-display {
+            display: none;
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-panel">
+        <div class="header">
+            <h1>Code Sandbox</h1>
+            <button class="run-button" onclick="runCode()">Run</button>
+        </div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('html')">HTML</button>
+            <button class="tab" onclick="switchTab('css')">CSS</button>
+            <button class="tab" onclick="switchTab('js')">JavaScript</button>
+        </div>
+        <div class="editor-container">
+            <button class="parse-button" onclick="separateCode()">分离代码</button>
+            <div class="editor-wrapper active" id="html-editor">
+                <textarea id="html-code"></textarea>
+            </div>
+            <div class="editor-wrapper" id="css-editor">
+                <textarea id="css-code"></textarea>
+            </div>
+            <div class="editor-wrapper" id="js-editor">
+                <textarea id="js-code"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="preview-panel">
+        <div class="preview-header">
+            <h2>Preview</h2>
+        </div>
+        <div class="preview-container">
+            <div class="error-display" id="error-display"></div>
+            <iframe class="preview-iframe" id="preview-iframe"></iframe>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+
+    <script>
+        var editors = {};
+
+        function initializeEditors() {
+            editors.html = CodeMirror.fromTextArea(document.getElementById('html-code'), {
+                mode: 'htmlmixed',
+                lineNumbers: true,
+                autoCloseTags: true
+            });
+
+            editors.css = CodeMirror.fromTextArea(document.getElementById('css-code'), {
+                mode: 'css',
+                lineNumbers: true
+            });
+
+            editors.js = CodeMirror.fromTextArea(document.getElementById('js-code'), {
+                mode: 'javascript',
+                lineNumbers: true
+            });
+
+            setDefaultCode();
+        }
+
+        function setDefaultCode() {
+            var htmlContent = '<div class="container">' +
+                '\n  <h1>Hello World!</h1>' +
+                '\n  <p>Welcome to the code sandbox!</p>' +
+                '\n  <button onclick="changeColor()">Change Color</button>' +
+                '\n</div>';
+            
+            var cssContent = '.container {' +
+                '\n  text-align: center;' +
+                '\n  padding: 50px;' +
+                '\n  font-family: Arial, sans-serif;' +
+                '\n}' +
+                '\n' +
+                '\nh1 {' +
+                '\n  color: #333;' +
+                '\n  margin-bottom: 20px;' +
+                '\n}' +
+                '\n' +
+                '\nbutton {' +
+                '\n  background: #007acc;' +
+                '\n  color: white;' +
+                '\n  border: none;' +
+                '\n  padding: 10px 20px;' +
+                '\n  border-radius: 5px;' +
+                '\n  cursor: pointer;' +
+                '\n}';
+            
+            var jsContent = 'function changeColor() {' +
+                '\n  const colors = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#feca57"];' +
+                '\n  const randomColor = colors[Math.floor(Math.random() * colors.length)];' +
+                '\n  document.querySelector("h1").style.color = randomColor;' +
+                '\n  console.log("Color changed to: " + randomColor);' +
+                '\n}';
+
+            editors.html.setValue(htmlContent);
+            editors.css.setValue(cssContent);
+            editors.js.setValue(jsContent);
+        }
+
+        function runCode() {
+            try {
+                var htmlContent = editors.html.getValue();
+                var cssContent = editors.css.getValue();
+                var jsContent = editors.js.getValue();
+                
+                var fullHTML = buildFullHTML(htmlContent, cssContent, jsContent);
+                
+                var iframe = document.getElementById('preview-iframe');
+                var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(fullHTML);
+                iframeDoc.close();
+                
+                console.log('Preview updated successfully');
+            } catch (error) {
+                console.error('Preview error:', error);
+                showError('Preview failed: ' + error.message);
+            }
+        }
+
+        function buildFullHTML(html, css, js) {
+            var fullHTML = [];
+            fullHTML.push('<!DOCTYPE html>');
+            fullHTML.push('<html>');
+            fullHTML.push('<head>');
+            fullHTML.push('<meta charset="UTF-8">');
+            fullHTML.push('<title>Preview</title>');
+            
+            if (css) {
+                fullHTML.push('<style>');
+                fullHTML.push(css);
+                fullHTML.push('</style>');
+            }
+            
+            fullHTML.push('</head>');
+            fullHTML.push('<body>');
+            
+            if (html) {
+                fullHTML.push(html);
+            }
+            
+            if (js) {
+                fullHTML.push('<script>');
+                fullHTML.push(js);
+                fullHTML.push('</script>');
+            }
+            
+            fullHTML.push('</body>');
+            fullHTML.push('</html>');
+            
+            return fullHTML.join('\n');
+        }
+
+        function switchTab(tabName) {
+            var tabs = document.querySelectorAll('.tab');
+            tabs.forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            
+            var editors_wrappers = document.querySelectorAll('.editor-wrapper');
+            editors_wrappers.forEach(function(wrapper) {
+                wrapper.classList.remove('active');
+            });
+            
+            var activeTab = document.querySelector('.tab[onclick="switchTab(\'' + tabName + '\')"]');
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
+            var activeEditor = document.getElementById(tabName + '-editor');
+            if (activeEditor) {
+                activeEditor.classList.add('active');
+            }
+            
+            if (editors[tabName]) {
+                setTimeout(function() {
+                    editors[tabName].refresh();
+                }, 10);
+            }
+        }
+
+        function separateCode() {
+            try {
+                var htmlContent = editors.html.getValue();
+                
+                if (htmlContent.includes('<style') || htmlContent.includes('<script')) {
+                    var parsed = parseHTMLContent(htmlContent);
+                    
+                    if (parsed.html) {
+                        editors.html.setValue(parsed.html);
+                    }
+                    if (parsed.css) {
+                        editors.css.setValue(parsed.css);
+                    }
+                    if (parsed.js) {
+                        editors.js.setValue(parsed.js);
+                    }
+                    
+                    showMessage('代码已成功分离！');
+                } else {
+                    showMessage('未检测到CSS或JavaScript内容。');
+                }
+            } catch (error) {
+                console.error('Separation error:', error);
+                showError('分离失败: ' + error.message);
+            }
+        }
+
+        function parseHTMLContent(htmlContent) {
+            var result = {
+                html: '',
+                css: '',
+                js: ''
+            };
+
+            var styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+            var cssMatches = [];
+            var match;
+            while ((match = styleRegex.exec(htmlContent)) !== null) {
+                cssMatches.push(match[1].trim());
+            }
+            result.css = cssMatches.join('\n\n');
+
+            var scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+            var jsMatches = [];
+            while ((match = scriptRegex.exec(htmlContent)) !== null) {
+                var scriptContent = match[1].trim();
+                if (scriptContent && !match[0].includes('src=')) {
+                    jsMatches.push(scriptContent);
+                }
+            }
+            result.js = jsMatches.join('\n\n');
+
+            var cleanHTML = htmlContent
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/^\s*\n/gm, '')
+                .trim();
+
+            result.html = cleanHTML;
+            return result;
+        }
+
+        function showError(message) {
+            var errorDisplay = document.getElementById('error-display');
+            errorDisplay.textContent = message;
+            errorDisplay.style.display = 'block';
+            setTimeout(function() {
+                errorDisplay.style.display = 'none';
+            }, 5000);
+        }
+
+        function showMessage(message) {
+            var errorDisplay = document.getElementById('error-display');
+            errorDisplay.style.background = '#e8f5e8';
+            errorDisplay.style.color = '#2e7d32';
+            errorDisplay.textContent = message;
+            errorDisplay.style.display = 'block';
+            setTimeout(function() {
+                errorDisplay.style.display = 'none';
+                errorDisplay.style.background = '#ffebee';
+                errorDisplay.style.color = '#c62828';
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEditors();
+            runCode();
+        });
+    </script>
+</body>
+</html>

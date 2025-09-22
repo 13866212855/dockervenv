@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试完整代码</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        
+        .counter {
+            font-size: 3em;
+            color: #667eea;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .buttons {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        
+        .color-box {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+            border-radius: 50%;
+            transition: all 0.5s ease;
+            background: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>互动测试页面</h1>
+        <div class="counter" id="counter">0</div>
+        <div class="buttons">
+            <button onclick="increment()">增加</button>
+            <button onclick="decrement()">减少</button>
+            <button onclick="reset()">重置</button>
+            <button onclick="changeColor()">变色</button>
+        </div>
+        <div class="color-box" id="colorBox"></div>
+        <div class="message" id="message">操作完成！</div>
+    </div>
+
+    <script>
+        let count = 0;
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+        let colorIndex = 0;
+
+        function updateCounter() {
+            document.getElementById('counter').textContent = count;
+            showMessage(`计数器更新为: ${count}`);
+        }
+
+        function increment() {
+            count++;
+            updateCounter();
+            animateCounter();
+        }
+
+        function decrement() {
+            count--;
+            updateCounter();
+            animateCounter();
+        }
+
+        function reset() {
+            count = 0;
+            updateCounter();
+            showMessage('计数器已重置！');
+        }
+
+        function changeColor() {
+            colorIndex = (colorIndex + 1) % colors.length;
+            const colorBox = document.getElementById('colorBox');
+            colorBox.style.background = colors[colorIndex];
+            colorBox.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                colorBox.style.transform = 'scale(1)';
+            }, 200);
+            showMessage(`颜色已更改为: ${colors[colorIndex]}`);
+        }
+
+        function animateCounter() {
+            const counter = document.getElementById('counter');
+            counter.style.transform = 'scale(1.2)';
+            counter.style.color = '#ff6b6b';
+            setTimeout(() => {
+                counter.style.transform = 'scale(1)';
+                counter.style.color = '#667eea';
+            }, 200);
+        }
+
+        function showMessage(text) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 2000);
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成！');
+            showMessage('欢迎使用互动测试页面！');
+            
+            // 添加键盘事件
+            document.addEventListener('keydown', function(e) {
+                switch(e.key) {
+                    case 'ArrowUp':
+                        increment();
+                        break;
+                    case 'ArrowDown':
+                        decrement();
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        changeColor();
+                        break;
+                    case 'r':
+                    case 'R':
+                        reset();
+                        break;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
